@@ -20,6 +20,20 @@
             backdrop-filter: blur(4px);
         }
     </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 min-h-screen">
     
@@ -31,10 +45,7 @@
                     <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    <div>
-                        <h1 class="text-2xl font-bold text-white">Trading Dashboard</h1>
-                        <p class="text-xs text-slate-400">Cập nhật mỗi 30 giây</p>
-                    </div>
+                    <h1 class="text-2xl font-bold text-white">Trading Dashboard</h1>
                 </div>
                 <div>
                     <button id="loginBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
@@ -172,9 +183,21 @@
     <script>
         // Data Storage
         const data = {
-            crypto: [],
-            stock: [],
-            forex: [],
+            crypto: [
+                { id: 1, symbol: 'BTC', name: 'Bitcoin', price: 95234.50, change: 2.3, volume: '28.5B' },
+                { id: 2, symbol: 'ETH', name: 'Ethereum', price: 3456.78, change: -1.2, volume: '15.2B' },
+                { id: 3, symbol: 'BNB', name: 'Binance Coin', price: 612.34, change: 0.8, volume: '1.8B' }
+            ],
+            stock: [
+                { id: 1, symbol: 'AAPL', name: 'Apple Inc.', price: 189.50, change: 1.5, volume: '65M' },
+                { id: 2, symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.30, change: -0.5, volume: '28M' },
+                { id: 3, symbol: 'MSFT', name: 'Microsoft Corp.', price: 374.20, change: 2.1, volume: '32M' }
+            ],
+            forex: [
+                { id: 1, symbol: 'EUR/USD', name: 'Euro/Dollar', price: 1.0875, change: 0.15, volume: '2.1T' },
+                { id: 2, symbol: 'GBP/USD', name: 'Pound/Dollar', price: 1.2634, change: -0.08, volume: '1.5T' },
+                { id: 3, symbol: 'USD/JPY', name: 'Dollar/Yen', price: 149.85, change: 0.42, volume: '1.8T' }
+            ],
             articles: [
                 {
                     id: 1,
@@ -199,170 +222,6 @@
         let isAdmin = false;
         let editingId = null;
         let editingArticleId = null;
-        let updateInterval = null;
-
-        // API Configuration
-        const CRYPTO_SYMBOLS = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'DOT'];
-        const STOCK_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA'];
-        const FOREX_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD'];
-
-        // Fetch Crypto Prices from Binance API
-        async function fetchCryptoPrices() {
-            try {
-                const promises = CRYPTO_SYMBOLS.map(async (symbol, index) => {
-                    const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}USDT`);
-                    const data = await response.json();
-                    return {
-                        id: index + 1,
-                        symbol: symbol,
-                        name: getCryptoName(symbol),
-                        price: parseFloat(data.lastPrice),
-                        change: parseFloat(data.priceChangePercent),
-                        volume: formatVolume(parseFloat(data.quoteVolume))
-                    };
-                });
-                data.crypto = await Promise.all(promises);
-                if (currentTab === 'crypto') renderPrices();
-            } catch (error) {
-                console.error('Error fetching crypto prices:', error);
-            }
-        }
-
-        // Fetch Stock Prices from Yahoo Finance Alternative (finnhub.io free tier)
-        async function fetchStockPrices() {
-            try {
-                const promises = STOCK_SYMBOLS.map(async (symbol, index) => {
-                    // Using Alpha Vantage demo (limited calls) or you can use other free APIs
-                    // For demo, we'll simulate with realistic data
-                    const basePrice = getStockBasePrice(symbol);
-                    const change = (Math.random() - 0.5) * 4; // -2% to +2%
-                    return {
-                        id: index + 1,
-                        symbol: symbol,
-                        name: getStockName(symbol),
-                        price: basePrice * (1 + change/100),
-                        change: change,
-                        volume: formatVolume(Math.random() * 100000000)
-                    };
-                });
-                data.stock = await Promise.all(promises);
-                if (currentTab === 'stock') renderPrices();
-            } catch (error) {
-                console.error('Error fetching stock prices:', error);
-            }
-        }
-
-        // Fetch Forex Prices from Exchange Rate API
-        async function fetchForexPrices() {
-            try {
-                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                const rates = await response.json();
-                
-                data.forex = [
-                    {
-                        id: 1,
-                        symbol: 'EUR/USD',
-                        name: 'Euro/Dollar',
-                        price: 1 / rates.rates.EUR,
-                        change: (Math.random() - 0.5) * 0.5,
-                        volume: '2.1T'
-                    },
-                    {
-                        id: 2,
-                        symbol: 'GBP/USD',
-                        name: 'Pound/Dollar',
-                        price: 1 / rates.rates.GBP,
-                        change: (Math.random() - 0.5) * 0.5,
-                        volume: '1.5T'
-                    },
-                    {
-                        id: 3,
-                        symbol: 'USD/JPY',
-                        name: 'Dollar/Yen',
-                        price: rates.rates.JPY,
-                        change: (Math.random() - 0.5) * 0.5,
-                        volume: '1.8T'
-                    },
-                    {
-                        id: 4,
-                        symbol: 'AUD/USD',
-                        name: 'Aussie/Dollar',
-                        price: 1 / rates.rates.AUD,
-                        change: (Math.random() - 0.5) * 0.5,
-                        volume: '1.2T'
-                    }
-                ];
-                if (currentTab === 'forex') renderPrices();
-            } catch (error) {
-                console.error('Error fetching forex prices:', error);
-            }
-        }
-
-        // Helper functions
-        function getCryptoName(symbol) {
-            const names = {
-                'BTC': 'Bitcoin',
-                'ETH': 'Ethereum',
-                'BNB': 'Binance Coin',
-                'SOL': 'Solana',
-                'XRP': 'Ripple',
-                'ADA': 'Cardano',
-                'DOGE': 'Dogecoin',
-                'DOT': 'Polkadot'
-            };
-            return names[symbol] || symbol;
-        }
-
-        function getStockName(symbol) {
-            const names = {
-                'AAPL': 'Apple Inc.',
-                'GOOGL': 'Alphabet Inc.',
-                'MSFT': 'Microsoft Corp.',
-                'AMZN': 'Amazon.com Inc.',
-                'TSLA': 'Tesla Inc.',
-                'META': 'Meta Platforms',
-                'NVDA': 'NVIDIA Corp.'
-            };
-            return names[symbol] || symbol;
-        }
-
-        function getStockBasePrice(symbol) {
-            const prices = {
-                'AAPL': 189,
-                'GOOGL': 141,
-                'MSFT': 374,
-                'AMZN': 151,
-                'TSLA': 242,
-                'META': 338,
-                'NVDA': 495
-            };
-            return prices[symbol] || 100;
-        }
-
-        function formatVolume(num) {
-            if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
-            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
-            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-            return num.toFixed(0);
-        }
-
-        // Initialize data fetching
-        async function initializeData() {
-            await Promise.all([
-                fetchCryptoPrices(),
-                fetchStockPrices(),
-                fetchForexPrices()
-            ]);
-        }
-
-        // Auto-update prices every 30 seconds
-        function startAutoUpdate() {
-            updateInterval = setInterval(() => {
-                fetchCryptoPrices();
-                fetchStockPrices();
-                fetchForexPrices();
-            }, 30000); // 30 seconds
-        }
 
         // DOM Elements
         const loginBtn = document.getElementById('loginBtn');
@@ -655,10 +514,8 @@
         };
 
         // Initial render
-        initializeData().then(() => {
-            renderPrices();
-            startAutoUpdate();
-        });
+        renderPrices();
     </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
