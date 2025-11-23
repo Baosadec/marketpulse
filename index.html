@@ -395,6 +395,7 @@
         // Articles CRUD
         addArticleBtn.addEventListener('click', () => {
             editingArticleId = null;
+            document.querySelector('#articleModal h3').textContent = 'Thêm bài viết mới';
             document.getElementById('articleCategory').value = 'crypto';
             document.getElementById('articleTitle').value = '';
             document.getElementById('articleContent').value = '';
@@ -419,13 +420,13 @@
             if (editingArticleId) {
                 const index = data.articles.findIndex(a => a.id === editingArticleId);
                 data.articles[index] = { ...data.articles[index], ...formData };
+                editingArticleId = null;
             } else {
                 formData.id = Date.now();
                 data.articles.unshift(formData);
             }
 
             articleModal.classList.add('hidden');
-            editingArticleId = null;
             renderArticles();
         });
 
@@ -482,6 +483,7 @@
 
         window.editArticle = (id) => {
             const article = data.articles.find(a => a.id === id);
+            document.querySelector('#articleModal h3').textContent = 'Chỉnh sửa bài viết';
             document.getElementById('articleCategory').value = article.category;
             document.getElementById('articleTitle').value = article.title;
             document.getElementById('articleContent').value = article.content;
